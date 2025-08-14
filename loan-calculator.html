@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Loan Payment Calculator</title>
+<style>
+  body { font-family: Arial,sans-serif; background: linear-gradient(to right,#eef2f3,#8e9eab); margin:0; padding:1rem; }
+  .calculator { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin:auto; }
+  .logo { display:block; margin:0 auto 1rem; max-width:75%; }
+  h2 { text-align:center; margin-bottom:0.5rem; white-space:normal; font-size:1rem; }
+  .instructions { text-align:center; font-size:0.95rem; margin-bottom:1.5rem; color:#333; }
+  label { display:block; margin-top:1rem; margin-bottom:0.5rem; font-weight:bold; }
+  input,select,button { width:100%; padding:0.6rem; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:1rem; }
+  button { background-color:#007BFF; color:white; border:none; margin-top:1.5rem; transition:background-color 0.3s ease; }
+  button:hover { background-color:#0056b3; }
+  .result { margin-top:1.5rem; font-weight:bold; text-align:center; }
+  .disclaimer { font-size:0.9rem; color:#666; margin-top:1rem; text-align:center; font-weight:bold; }
+  .disclaimer a { color: #007BFF; text-decoration: none; }
+  .disclaimer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="calculator">
+<img class="logo" src="https://www.dropbox.com/scl/fi/rggplj709leet5ppolno3/Balance-Finance_Color.jpg?rlkey=vv312z6jceaqrfdci4259100m&st=ejorf40d&raw=1" alt="Balance Finance Logo">
+<h2>Get Your Interest Rate and Payment</h2>
+<div class="instructions">Select a FICO score range, choose a loan term and enter a loan amount</div>
+<label for="ficoScore">FICO Score Range</label>
+<select id="ficoScore"></select>
+<label for="loanTerm">Loan Term</label>
+<select id="loanTerm"></select>
+<label for="loanAmount">Loan Amount</label>
+<input type="number" id="loanAmount" placeholder="Enter loan amount" />
+<button onclick="calculatePayment()">Find my rate and payment</button>
+<div class="result" id="rate"></div>
+<div class="result" id="payment"></div>
+<div class="disclaimer">
+For estimation only – not a loan offer or approval. Actual rates, terms, and payments will be set by the lender and may change. Estimates are for guidance and may differ from actual loan terms. 
+<a href="https://letsgo.balanceclaims.com/loan-calculator-disclaimer" target="_blank" rel="noopener noreferrer">[Full Disclaimer]</a>
+</div>
+</div>
+<script>
+const interestRates={5:{"800+":4.99,"799-760":5.99,"759-720":6.99,"719-680":7.99,"679-640":8.99},7:{"800+":4.99,"799-760":5.99,"759-720":6.99,"719-680":7.99},10:{"800+":5.99,"799-760":6.99,"759-720":7.99,"719-680":8.99},15:{"800+":6.99,"799-760":7.99,"759-720":8.99,"719-680":9.99}};
+const ficoOptions=Object.keys(interestRates[5]);
+const termSelect=document.getElementById("loanTerm");
+const ficoSelect=document.getElementById("ficoScore");
+function updateLoanTermOptions(selectedFICO){const allTerms=[5,7,10,15];termSelect.innerHTML="";let firstEnabledOption=null;allTerms.forEach(term=>{const option=document.createElement("option");option.value=term;option.text=`${term} Years`;if(selectedFICO==="679-640"&&term!==5){option.disabled=true;}else if(!firstEnabledOption){firstEnabledOption=term;}termSelect.appendChild(option);});if(firstEnabledOption!==null){termSelect.value=firstEnabledOption;}}
+ficoOptions.forEach(score=>{const option=document.createElement("option");option.value=score;option.text=score;ficoSelect.appendChild(option);});
+ficoSelect.addEventListener("change",()=>{updateLoanTermOptions(ficoSelect.value);});
+window.addEventListener("DOMContentLoaded",()=>{ficoSelect.value="800+";updateLoanTermOptions(ficoSelect.value);if([...termSelect.options].some(o=>o.value==="15"&&!o.disabled)){termSelect.value="15";}document.getElementById("loanAmount").value="";});
+function calculatePayment(){const loanAmount=parseFloat(document.getElementById("loanAmount").value);const loanTerm=parseInt(document.getElementById("loanTerm").value);const fico=document.getElementById("ficoScore").value;const rateDisplay=document.getElementById("rate");const paymentDisplay=document.getElementById("payment");const minAmounts={5:1000,7:5000,10:10000,15:15000};
+if(fico==="679-640"&&loanTerm!==5){rateDisplay.textContent="Sorry, no loans are available for the loan term and FICO score you chose.";paymentDisplay.textContent="";return;}
+if(fico==="679-640"&&loanAmount>5000){rateDisplay.textContent="For FICO scores 640–679, the maximum loan amount is $5,000.";paymentDisplay.textContent="";return;}
+if(fico!=="679-640"&&loanAmount>50000){rateDisplay.textContent="The maximum loan amount is $50,000.";paymentDisplay.textContent="";return;}
+if(isNaN(loanAmount)||loanAmount===0){rateDisplay.textContent="";paymentDisplay.textContent="";return;}
+if(loanAmount<minAmounts[loanTerm]){rateDisplay.textContent=`Minimum loan amount for ${loanTerm} year term is $${minAmounts[loanTerm].toLocaleString()}.`;paymentDisplay.textContent="";return;}
+const rate=interestRates[loanTerm]?.[fico];if(!rate){rateDisplay.textContent="Sorry, no loans are available for the loan term and FICO score you chose.";paymentDisplay.textContent="";return;}
+const monthlyRate=rate/100/12;const numberOfPayments=loanTerm*12;const monthlyPayment=(loanAmount*monthlyRate)/(1-Math.pow(1+monthlyRate,-numberOfPayments));
+rateDisplay.textContent=`Interest Rate: ${rate.toFixed(2)}%`;paymentDisplay.textContent=`Estimated Monthly Payment: $${monthlyPayment.toFixed(2)}`;}
+</script>
+</body>
+</html>
